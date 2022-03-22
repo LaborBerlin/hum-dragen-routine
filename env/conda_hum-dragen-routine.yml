@@ -1,0 +1,8 @@
+name: hum-dragen-routine
+channels:
+  - bioconda
+  - conda-forge
+  - anaconda
+dependencies:
+  - bioconda::fastqc=0.11.9
+  - bioconda::multiqc=1.12
