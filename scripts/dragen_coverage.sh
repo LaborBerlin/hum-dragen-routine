@@ -22,15 +22,15 @@ for path in $PATHS; do
   bamfile=$(find $path -name "*bam")
   fqfiles=$(find $path -name "*fastq.gz")
   echo "[$(date)]    $id..." >&2
+  mkdir -p /staging/output/${RUNID}-qc/${id}/{fastqc,mosdepth,qualimap,samtools}
   echo "
     #mosdepth
-    mkdir -p /staging/output/${RUNID}-qc/${id}/mosdepth/
     mosdepth --threads ${THREADS} --no-per-base --fast-mode \
       /staging/output/${RUNID}-qc/${id}/mosdepth/${id}-WGS \
       ${bamfile} \
       > /staging/output/${RUNID}-qc/${id}/mosdepth_${id}-WGS.log 2>&1
     mosdepth --threads ${THREADS} --no-per-base --fast-mode \
-      --include-flag 1024 \
+      --flag 0 --include-flag 1796 \
       /staging/output/${RUNID}-qc/${id}/mosdepth/${id}-WGS_dups \
       ${bamfile} \
       > /staging/output/${RUNID}-qc/${id}/mosdepth_${id}-WGS_WGS_dups.log 2>&1
@@ -45,7 +45,6 @@ for path in $PATHS; do
       ${bamfile} \
       > /staging/output/${RUNID}-qc/${id}/mosdepth_${id}-CDS_selected.log 2>&1
     #qualimap
-    mkdir -p /staging/output/${RUNID}-qc/${id}/qualimap/
     unset DISPLAY && qualimap bamqc --java-mem-size=32g \
         --bam ${bamfile} \
         --skip-duplicated --skip-dup-mode 0 \
@@ -68,7 +67,7 @@ for path in $PATHS; do
         --outformat HTML \
         -nt ${THREADS} \
         -outdir /staging/output/${RUNID}-qc/${id}/qualimap/${id}-Padded_Exomev8 \
-        > /staging/output/${RUNID}-qc/${id}/qualimap/${id}-Padded_Exomev8 2>&1
+        > /staging/output/${RUNID}-qc/${id}/qualimap/${id}-Padded_Exomev8.log 2>&1
     unset DISPLAY && qualimap bamqc --java-mem-size=32g \
         --bam ${bamfile} \
         --feature-file /mnt/s-labb-ngs01/scratch/databases/HUM/BED/2202_CDS.gencode.v19-selected.bed \
@@ -77,14 +76,12 @@ for path in $PATHS; do
         --outformat HTML \
         -nt ${THREADS} \
         -outdir /staging/output/${RUNID}-qc/${id}/qualimap/${id}-CDS_selected \
-        > /staging/output/${RUNID}-qc/${id}/qualimap/${id}-CDS_selected 2>&1
+        > /staging/output/${RUNID}-qc/${id}/qualimap/${id}-CDS_selected.log 2>&1
     #samtools
-    mkdir -p /staging/output/${RUNID}-qc/${id}/samtools/
     samtools flagstat -@ ${THREADS} ${bamfile} > /staging/output/${RUNID}-qc/${id}/samtools/${id}.samtools-flagstat
     samtools stats -@ ${THREADS} ${bamfile} > /staging/output/${RUNID}-qc/${id}/samtools/${id}.samtools-stats
     samtools idxstats -@ ${THREADS} ${bamfile} > /staging/output/${RUNID}-qc/${id}/samtools/${id}.samtools-idxstats
     #fastqc
-    mkdir -p /staging/output/${RUNID}-qc/${id}/fastqc
     fastqc --threads ${THREADS} --outdir /staging/output/${RUNID}-qc/${id}/fastqc/ \
       --adapters /mnt/s-labb-ngs01/scratch/databases/fastqc/fastqc_adapter_list.txt \
       --contaminants /mnt/s-labb-ngs01/scratch/databases/fastqc/fastqc_contaminant_list.txt \
