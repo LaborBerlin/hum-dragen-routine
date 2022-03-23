@@ -36,10 +36,6 @@ mosdepth_config:
     - 1
     - 10
     - 20
-  exclude_contigs:
-    - "GL*"
-    - "NC*"
-    - "hs37d5"
   show_excluded_debug_logs: True
 
 #qualimap
