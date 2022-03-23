@@ -6,3 +6,6 @@ channels:
 dependencies:
   - bioconda::fastqc=0.11.9
   - bioconda::multiqc=1.12
+  - bioconda::mosdepth=0.3.3
+  - bioconda::qualimap=2.2.2d
+  - bioconda::samtools=1.15
