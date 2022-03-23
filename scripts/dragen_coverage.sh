@@ -11,10 +11,11 @@ RUNID="$1"
 THREADS=8   #threads per sample
 PTHREADS=6  #gnu parallel threads
 
+SCRIPT=$(realpath $0)
+SCRIPTDIR=$(dirname $SCRIPT)
+
 echo "[$(date)] Analyzing $RUNID: ">&2
-
 mkdir -p /staging/output/${RUNID}-qc/
-
 PATHS=$(find /staging/output/$RUNID -mindepth 1 -maxdepth 1 -type d)
 for path in $PATHS; do
   id=${path##*/}
@@ -24,11 +25,11 @@ for path in $PATHS; do
   echo "
     #mosdepth
     mkdir -p /staging/output/${RUNID}-qc/${id}/mosdepth/
-    mosdepth --threads ${THREADS} --no-per-base --fast-mode --thresholds 1,10,20,100 \
+    mosdepth --threads ${THREADS} --no-per-base --fast-mode \
       /staging/output/${RUNID}-qc/${id}/mosdepth/${id}-WGS \
       ${bamfile} \
       > /staging/output/${RUNID}-qc/${id}/mosdepth_${id}-WGS.log 2>&1
-    mosdepth --threads ${THREADS} --no-per-base --fast-mode --thresholds 1,10,20,100 \
+    mosdepth --threads ${THREADS} --no-per-base --fast-mode \
       --include-flag 1024 \
       /staging/output/${RUNID}-qc/${id}/mosdepth/${id}-WGS_dups \
       ${bamfile} \
@@ -90,7 +91,14 @@ for path in $PATHS; do
       $bamfile $fqfiles \
       > /staging/output/${RUNID}-qc/${id}/fastqc.log 2>&1
   "
-done |
+done | \
   parallel -j ${PTHREADS} --joblog /staging/output/${RUNID}-qc/joblog --keep-order --progress
+
+#multiqc
+multiqc --force --interactive --verbose \
+  --config ${SCRIPTDIR}/../resources/multiqc_config.yaml \
+  --outdir /staging/output/${RUNID}-qc/ \
+  --title "LB HUM DRAGEN ${RUNID} QC Report" \
+  /staging/output/${RUNID} /staging/output/${RUNID}-qc /mnt/smb01-hum/NGSRawData/${RUNID}/Data/Intensities/Basecalls
 
 echo "[$(date)]: Finished."
