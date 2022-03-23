@@ -1,11 +1,11 @@
 #!/usr/bin/bash
 #
-# Schedules computation of fastq.gz files given in /mnt/smb01-hum/NGSRawData/<RUNID>/Data/Intensities/BaseCalls for
-# given "<IDS>" (multiple ids seperated by space).
+# Schedules computation of downsampled fastq.gz files given in
+# /mnt/smb01-hum/NGSRawData/<RUNID>/Data/Intensities/BaseCalls for given "<IDS>" (multiple ids seperated by space).
 #
 # Results are saved to /staging/output/<RUNID>/
 #
-# 2022-03-22
+# 2022-03-23
 
 RUNID="$1"
 IDS="$2"
@@ -44,5 +44,8 @@ for id in $IDS; do
    2>&1 | tee ${RUNID}_${id}-90Gb_dragen.log"
 done \
   | parallel -j 1 -k --joblog dragen_command-${RUNID}-90Gb.joblog
+
+#bgzip plain fastq files
+parallel -j 4 bgzip -@ 12 --compress-level 9 ::: $(find /staging/output/${RUNID}/ -name "*fastq")
 
 echo "[$(date)]: Finished."
