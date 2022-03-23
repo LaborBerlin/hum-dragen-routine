@@ -26,6 +26,10 @@ table_columns_visible:
     percent_fails: True
     percent_duplicates: False
 
+#bclconvert
+bclconvert:
+  genome_size: 3137454505
+
 #mosdepth
 mosdepth_config:
   general_stats_coverage:
