@@ -1,0 +1,56 @@
+#hum-dragen-routine: multiqc configuration
+
+#title
+subtitle: "Labor Berlin Humangenetik WGS Illumina DRAGEN 3.10 Quality Report"
+intro_text: ""
+report_comment: ""
+custom_logo: 'multiqc_logo.gif'
+custom_logo_url: 'https://www.laborberlin.com/fachbereiche/humangenetik/'
+max_table_rows: 5000
+report_header_info:
+  - Contact E-mail: 'johannes.helmuth@laborberlin.com'
+  - Application Type: 'TWIST Whole Genome Sequencing with Enzymatic Shearing'
+  - Project Type: 'HUM-NGS Germline Variant Identification'
+  - Sequencing Platform: 'Illumina NovaSeq 6000'
+  - Sequencing Setup: '2x151 with 2x10bp Barcode'
+
+decimalPoint_format: ","
+thousandsSep_format: ""
+
+#overview
+table_columns_visible:
+  QualiMap:
+    general_error_rate: False
+    median_insert_size: True
+  FastQC:
+    percent_fails: True
+    percent_duplicates: False
+
+#mosdepth
+mosdepth_config:
+  general_stats_coverage:
+    - 1
+    - 10
+    - 20
+  exclude_contigs:
+    - "GL*"
+    - "NC*"
+    - "hs37d5"
+  show_excluded_debug_logs: True
+
+#qualimap
+qualimap_config:
+  general_stats_coverage:
+    - 1
+    - 10
+    - 20
+    - 100
+  general_stats_coverage_hidden:
+    - 100
+
+#samtools
+samtools_idxstats_xchr: X
+samtools_idxstats_ychr: Y
+samtools_idxstats_always:
+  - X
+  - Y
