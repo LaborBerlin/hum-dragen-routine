@@ -94,11 +94,16 @@ for path in $PATHS; do
 done | \
   parallel -j ${PTHREADS} --joblog /staging/output/${RUNID}-qc/joblog --keep-order --progress
 
+#copy bclconvert information to qc folder
+rsync -qru \
+  /mnt/smb01-hum/NGSRawData/${RUNID}/Data/Intensities/Basecalls/{dragen-replay.json,dragen.time_metrics.csv,Logs,Reports}\
+  /staging/output/${RUNID}-qc/bclconvert
+
 #multiqc
-multiqc --force --interactive --verbose \
+multiqc --force --interactive \
   --config ${SCRIPTDIR}/../resources/multiqc_config.yaml \
   --outdir /staging/output/${RUNID}-qc/ \
   --title "LB HUM DRAGEN ${RUNID} QC Report" \
-  /staging/output/${RUNID} /staging/output/${RUNID}-qc /mnt/smb01-hum/NGSRawData/${RUNID}/Data/Intensities/Basecalls
+  /staging/output/${RUNID} /staging/output/${RUNID}-qc
 
 echo "[$(date)]: Finished."
