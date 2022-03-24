@@ -14,6 +14,10 @@ PTHREADS=6  #gnu parallel threads
 SCRIPT=$(realpath $0)
 SCRIPTDIR=$(dirname $SCRIPT)
 
+#load conda
+. /opt/conda/miniconda3/etc/profile.d/conda.sh
+conda activate hum-dragen-routine
+
 echo "[$(date)] Analyzing $RUNID: ">&2
 mkdir -p /staging/output/${RUNID}-qc/
 PATHS=$(find /staging/output/$RUNID -mindepth 1 -maxdepth 1 -type d)
