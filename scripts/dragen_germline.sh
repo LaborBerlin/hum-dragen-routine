@@ -2,6 +2,11 @@
 #
 # Schedules computation of downsampled fastq.gz files given in
 # /mnt/smb01-hum/NGSRawData/<RUNID>/Data/Intensities/BaseCalls for given "<IDS>" (multiple ids seperated by space).
+# 
+# Downsampling can be done by giving a XGb value (>=1Gb) as 3rd argument.
+#
+# Example with Downsampling to 8Gb:
+#  bash dragen_germline 220311_A01077_0172_AH75YHDMXY "LB22-0706tn LB22-0695" "8Gb"
 #
 # Results are saved to /staging/output/<RUNID>/
 #
@@ -9,43 +14,60 @@
 
 RUNID="$1"
 IDS="$2"
+DOWNSAMPLING=${3:-0}
 
-DOWNSAMPLINGSEED="1234"
-
-echo -n "DRAGEN LICENSE: "
+echo -n "Current DRAGEN LICENSE usage: "
 echo $(dragen_lic -f Genome | grep Gbases) >&2
 
-echo "[$(date)] Analyzing $IDS from $RUNID: ">&2
+if [[ "$DOWNSAMPLING" != 0 ]]; then
+  echo "[$(date)] Downsampling enabled for ${DOWNSAMPLING}."
+  SAMPLESUFFIX="-${DOWNSAMPLING}"
+  DOWNSAMPLINGREADS=$(echo "scale=12; (${DOWNSAMPLING/Gb/} / 0.15 ) * 500000" | bc | awk '{print int($1)}')
+  DOWNSAMPLINGSNIPPET="--enable-down-sampler true --down-sampler-random-seed 1234 \
+    --down-sampler-reads  $DOWNSAMPLINGREADS \
+    --enable-down-sampler-output true --down-sampler-num-threads 32"
+else
+  SAMPLESUFFIX=""
+  DOWNSAMPLINGSNIPPET=""
+fi
 
+echo "[$(date)] Preparing DRAGEN commands: ">&2
 for id in $IDS; do
-  echo "[$(date)]    $id..." >&2
+  echo "          $id..." >&2
   fq1=$(find "/mnt/smb01-hum/NGSRawData/${RUNID}/" -name "${id}*_R1_*.fastq.gz")
   fq2=$(find "/mnt/smb01-hum/NGSRawData/${RUNID}/" -name "${id}*_R2_*.fastq.gz")
-  mkdir -p /staging/output/${RUNID}/${id}-90Gb/
+  idfolder="${id}${SAMPLESUFFIX}"
+  mkdir -p /staging/output/${RUNID}/${idfolder}/
   echo "/usr/bin/time \
    dragen --ref-dir /staging/human/reference/hs37d5/hs37d5.fa.k_21.f_16.m_149 \
    --fastq-file1 ${fq1} --fastq-file2 ${fq2} \
-   --output-directory /staging/output/${RUNID}/${id}-90Gb/ --output-file-prefix ${id}-90Gb_dragen \
-   --RGID WGS --RGSM ${id}-90Gb \
+   --output-directory /staging/output/${RUNID}/${idfolder}/ --output-file-prefix ${idfolder}_dragen \
+   --RGID WGS --RGSM ${idfolder} \
    --num-threads 46 \
    --enable-map-align true --enable-map-align-output true --enable-duplicate-marking true \
    --enable-variant-caller true \
    --qc-cross-cont-vcf /opt/edico/config/sample_cross_contamination_resource_GRCh37.vcf.gz \
    --enable-cnv true --cnv-enable-self-normalization true \
    --enable-sv true \
-   --enable-down-sampler true --down-sampler-random-seed ${DOWNSAMPLINGSEED} --down-sampler-reads 305000000 \
-   --enable-down-sampler-output true --down-sampler-num-threads 32 \
+   ${DOWNSAMPLINGSNIPPET} \
    --qc-coverage-region-1 /staging/human/bed/CDS-v19-ROIs_v2.bed \
    --qc-coverage-reports-1 cov_report full_res \
    --qc-coverage-region-2 /staging/human/bed/Regions_Exomev8.bed \
    --qc-coverage-reports-2 cov_report full_res \
    --qc-coverage-region-3 /staging/human/bed/Padded_Exomev8.bed \
    --qc-coverage-reports-3 cov_report full_res \
-   2>&1 | tee ${RUNID}_${id}-90Gb_dragen.log"
+   2>&1 | tee ${RUNID}_${idfolder}_dragen.log"
 done \
-  | parallel -j 1 -k --joblog dragen_command-${RUNID}-90Gb.joblog
+  >dragen_germline-${RUNID}${SAMPLESUFFIX}.sh
 
-#bgzip plain fastq files
+echo "[$(date)] Analyzing $IDS from $RUNID: ">&2
+cat dragen_germline-${RUNID}${SAMPLESUFFIX}.sh \
+  | parallel -j 1 -k --progress --joblog dragen_germline-${RUNID}${SAMPLESUFFIX}.joblog
+
+echo "[$(date)] BGZIP for plain fastq files if present: ">&2
 parallel -j 4 bgzip -@ 12 --compress-level 9 ::: $(find /staging/output/${RUNID}/ -name "*fastq")
+
+echo -n "Current DRAGEN LICENSE usage: "
+echo $(dragen_lic -f Genome | grep Gbases) >&2
 
 echo "[$(date)]: Finished."
