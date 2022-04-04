@@ -14,9 +14,23 @@ DATE=${2}
 OUTPUTDIR=${3:-${RUNDIR}/Data/Intensities/BaseCalls/}
 echo "[$(date)]: Output directory is set as: ${OUTPUTDIR}." >&2
 
-#TODO: SampleSheet needs to copied to RUNDIR and adapted to
-# AdapterRead1,AGATCGGAAGAGCACACGTCTGAACTCCAGTCA,,,,,,,,
-# AdapterRead2,AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT,,,,,,,,
+echo "[$(date)]: Correcting SampleSheet for bclconvert usage." >&2
+
+SAMPLESHEETF="$RUNDIR/SampleSheet.csv"
+[ ! -f "$SAMPLSHEETF"] && { echo "Samplesheet $RUNDIR/SampleSheet.csv not found!" >&2;  exit 1; }
+
+if [ $(grep -c "IsIndexedRead=\"Y\"" ${RUNDIR}/RunInfo.xml) -gt 1 ]; then
+  BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1\nBarcodeMismatchesIndex2,1"
+else
+  BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1"
+fi
+sed \
+  -e "/\[Settings\]/ a CreateFastqForIndexReads,1" `#Generate FASTQ for Index sequences` \
+  -e "s/Adapter,/AdapterRead1,/"                   `#Adapter not an bclconvert field - AdapterRead1 is correct` \
+  -e "/^ReverseComplement,*/d"                     `#Not supported by bclconvert`\
+  "$BARCODESTR"                                    `#Allow 1 Mismatch for barcode - default value` \
+  ${SAMPLESHEETF} \
+  >${SAMPLESHEETF/.csv/_bclconvert.csv}
 
 echo -n "Current DRAGEN LICENSE usage: " >&2
 dragen_lic -f Genome | grep Gbases >&2
@@ -32,14 +46,12 @@ else
   echo "[$(date)]: Waiting for $sleep_seconds secs until $(date -d @${target_epoch}):" >&2
   echo  >&2
   c=$sleep_seconds # seconds to wait
-  REWRITE="\e[25D\e[1A\e[K"
   while [ $c -gt 0 ]; do 
       c=$((c-1))
       sleep 1
       rest_time=$(eval "echo $(date -ud "@$c" +'$((%s/3600/24)) d %H hrs %M mins %S secs')")
-      #echo -e "${REWRITE}$rest_time" >&2
   done
-  echo -e "${REWRITE}Starting..." >&2
+  echo -e "Starting..." >&2
 fi
 
 #Wait for sequencing to complete (Empty file CopyComplete.txt created?)
@@ -52,15 +64,15 @@ then
     sleep 5m
     echo -n "." >&2
   done
-  echo "[$(date)]:\e[92m Sequencing is finished.\e[0m" >&2
-  sleep 5m
 fi
+echo "[$(date)]: Sequencing is finished." >&2
 
+#NOTE: Number of threads and HW+12 option are set automatically by dragen executable but can also be specified
 dragen --force --bcl-conversion-only true \
   --bcl-input-directory ${RUNDIR} \
+  --sample-sheet ${SAMPLESHEETF/.csv/_bclconvert.csv} \
   --output-directory ${RUNDIR}/Data/Intensities/BaseCalls/ \
-  --no-lane-splitting true \
-  2>&1 | tee ${RUNID}_BCLCONVERT.log
+  --no-lane-splitting true
 
 echo -n "Current DRAGEN LICENSE usage: " >&2
 dragen_lic -f Genome | grep Gbases >&2
