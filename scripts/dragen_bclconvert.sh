@@ -71,7 +71,7 @@ echo "[$(date)]: Sequencing is finished." >&2
 dragen --force --bcl-conversion-only true \
   --bcl-input-directory ${RUNDIR} \
   --sample-sheet ${SAMPLESHEETF/.csv/_bclconvert.csv} \
-  --output-directory ${RUNDIR}/Data/Intensities/BaseCalls/ \
+  --output-directory ${OUTPUTDIR} \
   --no-lane-splitting true
 
 echo -n "Current DRAGEN LICENSE usage: " >&2
