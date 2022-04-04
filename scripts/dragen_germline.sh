@@ -16,7 +16,7 @@ RUNID="$1"
 IDS="$2"
 DOWNSAMPLING=${3:-0}
 
-echo -n "Current DRAGEN LICENSE usage: "
+echo -n "Current DRAGEN LICENSE usage: " >&2
 echo $(dragen_lic -f Genome | grep Gbases) >&2
 
 if [[ "$DOWNSAMPLING" != 0 ]]; then
@@ -67,7 +67,7 @@ cat dragen_germline-${RUNID}${SAMPLESUFFIX}.sh \
 echo "[$(date)] BGZIP for plain fastq files if present: ">&2
 parallel -j 4 bgzip -@ 12 --compress-level 9 ::: $(find /staging/output/${RUNID}/ -name "*fastq")
 
-echo -n "Current DRAGEN LICENSE usage: "
+echo -n "Current DRAGEN LICENSE usage: " >&2
 echo $(dragen_lic -f Genome | grep Gbases) >&2
 
 echo "[$(date)]: Finished."

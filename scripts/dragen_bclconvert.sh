@@ -4,27 +4,33 @@
 #
 # 2022-03-18 helmuth
 
-RUNID=$1
-DATE=$2
+[ -z "$1" ] && { echo "Specify run ID as first argument!" >&2; exit 1; }
+RUNID=${1}
+RUNDIR=$(find /mnt/smb01-hum/NGSRawData/ /mnt/smb01-mol/NGSRawData/ -maxdepth 1 -type d -name "${RUNID}*")
+echo "[$(date)]: For ${RUNID} the following RUNDIR was found: ${RUNDIR}." >&2
 
-#NOTE: SampleSheet needs to copied to RUNDIR and adapted to
+DATE=${2}
+
+OUTPUTDIR=${3:-${RUNDIR}/Data/Intensities/BaseCalls/}
+echo "[$(date)]: Output directory is set as: ${OUTPUTDIR}." >&2
+
+#TODO: SampleSheet needs to copied to RUNDIR and adapted to
 # AdapterRead1,AGATCGGAAGAGCACACGTCTGAACTCCAGTCA,,,,,,,,
 # AdapterRead2,AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT,,,,,,,,
 
+echo -n "Current DRAGEN LICENSE usage: " >&2
 dragen_lic -f Genome | grep Gbases >&2
-
-RUNDIR="/mnt/smb01-hum/NGSRawData/$RUNID"
 
 #Check if an offset is given
 if [ -z "$DATE" ]; then
-  echo "[$(date)]: No starting time given! Processing starts now..."
+  echo "[$(date)]: No starting time given! Processing starts now..." >&2
 else
-  echo "[$(date)]: Starting time given!"
+  echo "[$(date)]: Starting time given!" >&2
   current_epoch=$(date +%s)
   target_epoch=$(date -d "$DATE" +%s)
   sleep_seconds=$(( $target_epoch - $current_epoch ))
-  echo "[$(date)]: Waiting for $sleep_seconds secs until $(date -d @${target_epoch}):"
-  echo 
+  echo "[$(date)]: Waiting for $sleep_seconds secs until $(date -d @${target_epoch}):" >&2
+  echo  >&2
   c=$sleep_seconds # seconds to wait
   REWRITE="\e[25D\e[1A\e[K"
   while [ $c -gt 0 ]; do 
@@ -56,6 +62,7 @@ dragen --force --bcl-conversion-only true \
   --no-lane-splitting true \
   2>&1 | tee ${RUNID}_BCLCONVERT.log
 
+echo -n "Current DRAGEN LICENSE usage: " >&2
 dragen_lic -f Genome | grep Gbases >&2
 
-echo "Finished."
+echo "Finished." >&2
