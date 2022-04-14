@@ -19,13 +19,19 @@ echo "[$(date)] Correcting SampleSheet for bclconvert usage." >&2
 SAMPLESHEETF="$RUNDIR/SampleSheet.csv"
 [ ! -f "$SAMPLSHEETF"] && { echo "Samplesheet $RUNDIR/SampleSheet.csv not found!" >&2;  exit 1; }
 
-cp ${SAMPLESHEETF} ${SAMPLESHEETF/.csv/_bclconvert.csv}
+#Adapt SampleSheet for bclconvert usage 
+# (see https://support.illumina.com/bulletins/2020/10/upgrading-from-bcl2fastq-to-bcl-convert.html)
 if [ $(grep -c "IsIndexedRead=\"Y\"" ${RUNDIR}/RunInfo.xml) -gt 1 ]; then
   echo "[$(date)] Dual indexing detected - Computing reverse complement for i5." >&2
   BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1\nBarcodeMismatchesIndex2,1"
+  I5SEQS=$(cut -d "," -f 9 ${SAMPLESHEETF/.csv/_bclconvert.csv} | sed '1,/index2/d')
+  perl -ne '@arr = split /,/; if ($arr[8] ne "index2") { $arr[8] =~ tr/ATGC/TACG/; $arr[8] = reverse $arr[8]; }; print join ",", @arr;' \
+    "${SAMPLESHEETF}" \
+    >"${SAMPLESHEETF/.csv/_bclconvert.csv}"
 else
   echo "[$(date)] Single indexing detected - No reverse complement for i5 computed." >&2
   BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1"
+  cp ${SAMPLESHEETF} ${SAMPLESHEETF/.csv/_bclconvert.csv}
 fi
 sed -i \
   -e "/\[Settings\]/ a CreateFastqForIndexReads,1" `#Generate FASTQ for Index sequences` \
