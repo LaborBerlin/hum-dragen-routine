@@ -49,6 +49,7 @@ for id in $IDS; do
    --qc-cross-cont-vcf /opt/edico/config/sample_cross_contamination_resource_GRCh37.vcf.gz \
    --enable-cnv true --cnv-enable-self-normalization true \
    --enable-sv true \
+   --enable-cyp2d6 true \
    ${DOWNSAMPLINGSNIPPET} \
    --qc-coverage-region-1 /staging/human/bed/CDS-v19-ROIs_v2.bed \
    --qc-coverage-reports-1 cov_report full_res \
