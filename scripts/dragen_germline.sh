@@ -16,6 +16,10 @@ RUNID="$1"
 IDS="$2"
 DOWNSAMPLING=${3:-0}
 
+#get basedir
+SCRIPT=$(realpath $0)
+SCRIPTDIR=$(dirname $SCRIPT)
+
 echo -n "Current DRAGEN LICENSE usage: " >&2
 echo $(dragen_lic -f Genome | grep Gbases) >&2
 
@@ -50,6 +54,7 @@ for id in $IDS; do
    --enable-cnv true --cnv-enable-self-normalization true \
    --enable-sv true \
    --enable-cyp2d6 true \
+   --repeat-genotype-enable true --repeat-genotype-specs ${SCRIPTDIR}/../resources/expansionhunter/GRCh37_edico+stripy+smn.json \
    ${DOWNSAMPLINGSNIPPET} \
    --qc-coverage-region-1 /staging/human/bed/CDS-v19-ROIs_v2.bed \
    --qc-coverage-reports-1 cov_report full_res \
