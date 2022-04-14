@@ -77,7 +77,7 @@ fi
 echo "[$(date)] Sequencing is finished." >&2
 
 #NOTE: Number of threads and HW+12 option are set automatically by dragen executable but can also be specified
-echo -n "[$(date)] Starting DRAGEN BCLCONVERT:" >&2
+echo "[$(date)] Starting DRAGEN BCLCONVERT:" >&2
 dragen --force --bcl-conversion-only true \
   --bcl-input-directory ${RUNDIR} \
   --sample-sheet ${SAMPLESHEETF/.csv/_bclconvert.csv} \
@@ -85,9 +85,9 @@ dragen --force --bcl-conversion-only true \
   --no-lane-splitting true
 echo "[$(date)] DRAGEN BCLCONVERT finished." >&2
 
-echo -n "[$(date)] Copying fastq data to $OUTDIR: " >&2
-rsync -uq /staging/output/${RUNID}-fastq/ ${OUTPUTDIR} 
-echo -n "[$(date)] Copying fastq data finished." >&2
+echo "[$(date)] Copying fastq data to $OUTDIR: " >&2
+rsync -ruq /staging/output/${RUNID}-fastq/ ${OUTPUTDIR} 
+echo "[$(date)] Copying fastq data finished." >&2
 
 echo -n "[$(date)] Current DRAGEN LICENSE usage:" >&2
 dragen_lic -f Genome | grep Gbases >&2
