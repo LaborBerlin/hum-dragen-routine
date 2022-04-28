@@ -72,8 +72,10 @@ echo "[$(date)] Analyzing $IDS from $RUNID: ">&2
 cat dragen_germline-${RUNID}${SAMPLESUFFIX}.sh \
   | parallel -j 1 -k --progress --joblog dragen_germline-${RUNID}${SAMPLESUFFIX}.joblog
 
-echo "[$(date)] BGZIP for plain fastq files if present: ">&2
-parallel -j 4 bgzip -@ 12 --compress-level 9 ::: $(find /staging/output/${RUNID}/ -name "*fastq")
+if [[ ! -z $(find /staging/output/${RUNID}/ -name "*fastq") ]]; then
+  echo "[$(date)] BGZIP for plain fastq files: ">&2
+  parallel -j 4 bgzip -@ 12 --compress-level 9 ::: $(find /staging/output/${RUNID}/ -name "*fastq")
+fi
 
 echo -n "Current DRAGEN LICENSE usage: " >&2
 echo $(dragen_lic -f Genome | grep Gbases) >&2
