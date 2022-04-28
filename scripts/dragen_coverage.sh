@@ -23,7 +23,7 @@ mkdir -p /staging/output/${RUNID}-qc/
 PATHS=$(find /staging/output/$RUNID -mindepth 1 -maxdepth 1 -type d)
 for path in $PATHS; do
   id=${path##*/}
-  bamfile=$(find $path -name "*bam")
+  bamfile=$(find $path -name "*dragen.bam")
   fqfiles=$(find $path -name "*fastq.gz")
   echo "[$(date)]    $id..." >&2
   mkdir -p /staging/output/${RUNID}-qc/${id}/{fastqc,mosdepth,qualimap,samtools}
