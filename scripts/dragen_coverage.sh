@@ -26,8 +26,13 @@ for path in $PATHS; do
   bamfile=$(find $path -name "*dragen.bam")
   fqfiles=$(find $path -name "*fastq.gz")
   echo "[$(date)]    $id..." >&2
-  mkdir -p /staging/output/${RUNID}-qc/${id}/{fastqc,mosdepth,qualimap,samtools}
+  mkdir -p /staging/output/${RUNID}-qc/${id}/{fastqc,mosdepth,picard,qualimap,samtools}
   echo "
+    #picard
+    picard EstimateLibraryComplexity --INPUT ${bamfile} --OUTPUT /staging/output/${RUNID}-qc/${id}/picard/${id} \
+      --OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 \
+      --TMP_DIR /staging/tmp/ \
+      > /staging/output/${RUNID}-qc/${id}/picard_${id}-EstimateLibraryComplexity.log 2>&1
     #mosdepth
     mosdepth --threads ${THREADS} --no-per-base --fast-mode \
       /staging/output/${RUNID}-qc/${id}/mosdepth/${id}-WGS \
