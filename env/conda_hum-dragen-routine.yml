@@ -7,5 +7,6 @@ dependencies:
   - bioconda::fastqc=0.11.9
   - bioconda::multiqc=1.12
   - bioconda::mosdepth=0.3.3
+  - bioconda::picard=2.27.1
   - bioconda::qualimap=2.2.2d
-  - bioconda::samtools=1.15
+  - bioconda::samtools=1.7
