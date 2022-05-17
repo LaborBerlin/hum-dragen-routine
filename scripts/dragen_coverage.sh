@@ -30,6 +30,7 @@ for path in $PATHS; do
   echo "
     #picard
     picard EstimateLibraryComplexity --INPUT ${bamfile} --OUTPUT /staging/output/${RUNID}-qc/${id}/picard/${id} \
+      --READ_NAME_REGEX '(?:.*:)?([0-9]+)[^:]*:([0-9]+)[^:]*:([0-9]+)[^:].*$' \
       --OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 \
       --TMP_DIR /staging/tmp/ \
       > /staging/output/${RUNID}-qc/${id}/picard_${id}-EstimateLibraryComplexity.log 2>&1
