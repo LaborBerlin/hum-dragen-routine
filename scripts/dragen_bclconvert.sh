@@ -83,7 +83,7 @@ dragen --force --bcl-conversion-only true \
   --sample-sheet ${SAMPLESHEETF/.csv/_bclconvert.csv} \
   --output-directory /staging/output/${RUNID}-fastq/ \
   --no-lane-splitting true \
-  --bcl-num-parallel-tiles 2
+  --bcl-num-parallel-tiles 1
 echo "[$(date)] DRAGEN BCLCONVERT finished." >&2
 
 echo "[$(date)] Copying fastq data to $OUTDIR: " >&2
