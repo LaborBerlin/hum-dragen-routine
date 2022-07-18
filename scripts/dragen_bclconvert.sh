@@ -86,7 +86,7 @@ dragen --force --bcl-conversion-only true \
   --bcl-num-parallel-tiles 1
 echo "[$(date)] DRAGEN BCLCONVERT finished." >&2
 
-echo "[$(date)] Copying fastq data to $OUTDIR: " >&2
+echo "[$(date)] Copying fastq data to ${OUTPUTDIR}: " >&2
 rsync -ruq /staging/output/${RUNID}-fastq/ ${OUTPUTDIR} 
 echo "[$(date)] Copying fastq data finished." >&2
 
