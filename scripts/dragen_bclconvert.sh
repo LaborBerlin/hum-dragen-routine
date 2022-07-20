@@ -11,34 +11,38 @@ echo "[$(date)] For ${RUNID} the following RUNDIR was found: ${RUNDIR}." >&2
 
 DATE=${2}
 
-OUTPUTDIR=${3:-${RUNDIR}/Data/Intensities/BaseCalls/}
-echo "[$(date)] Output directory is set as: ${OUTPUTDIR}." >&2
-
-echo "[$(date)] Correcting SampleSheet for bclconvert usage." >&2
-
-SAMPLESHEETF="$RUNDIR/SampleSheet.csv"
+SAMPLESHEETF=${3:-$RUNDIR/SampleSheet.csv}
 [ ! -f "$SAMPLSHEETF"] && { echo "Samplesheet $RUNDIR/SampleSheet.csv not found!" >&2;  exit 1; }
 
 #Adapt SampleSheet for bclconvert usage 
 # (see https://support.illumina.com/bulletins/2020/10/upgrading-from-bcl2fastq-to-bcl-convert.html)
-if [ $(grep -c "IsIndexedRead=\"Y\"" ${RUNDIR}/RunInfo.xml) -gt 1 ]; then
-  echo "[$(date)] Dual indexing detected - Computing reverse complement for i5." >&2
-  BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1\nBarcodeMismatchesIndex2,1"
-  I5SEQS=$(cut -d "," -f 9 ${SAMPLESHEETF} | sed '1,/index2/d')
-  perl -ne '@arr = split /,/; if ($arr[7] ne "index2") { $arr[7] =~ tr/ATGC/TACG/; $arr[7] = reverse $arr[7]; }; print join ",", @arr;' \
-    "${SAMPLESHEETF}" \
-    >"${SAMPLESHEETF/.csv/_bclconvert.csv}"
-else
-  echo "[$(date)] Single indexing detected - No reverse complement for i5 computed." >&2
-  BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1"
-  cp ${SAMPLESHEETF} ${SAMPLESHEETF/.csv/_bclconvert.csv}
+if [ -z "$3" ]; then
+  if [ $(grep -c "IsIndexedRead=\"Y\"" ${RUNDIR}/RunInfo.xml) -gt 1 ]; then
+    echo "[$(date)] Dual indexing detected - Computing reverse complement for i5." >&2
+    BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1\nBarcodeMismatchesIndex2,1"
+    I5SEQS=$(cut -d "," -f 9 ${SAMPLESHEETF} | sed '1,/index2/d')
+    perl -ne '@arr = split /,/; if ($arr[7] ne "index2") { $arr[7] =~ tr/ATGC/TACG/; $arr[7] = reverse $arr[7]; }; print join ",", @arr;' \
+      "${SAMPLESHEETF}" \
+      >"${SAMPLESHEETF/.csv/_bclconvert.csv}"
+  else
+    echo "[$(date)] Single indexing detected - No reverse complement for i5 computed." >&2
+    BARCODESTR="-e /\[Settings\]/ a BarcodeMismatchesIndex1,1"
+    cp ${SAMPLESHEETF} ${SAMPLESHEETF/.csv/_bclconvert.csv}
+  fi
+  sed -i \
+    -e "/\[Settings\]/ a CreateFastqForIndexReads,1" `#Generate FASTQ for Index sequences` \
+    -e "s/Adapter,/AdapterRead1,/"                   `#Adapter not an bclconvert field - AdapterRead1 is correct` \
+    -e "s/Adapter2,/AdapterRead2,/"                  `#Adapter2 not an bclconvert field - AdapterRead2 is correct` \
+    -e "/^ReverseComplement,*/d"                     `#Not supported by bclconvert`\
+    "$BARCODESTR"                                    `#Allow 1 Mismatch for barcode - default value` \
+    ${SAMPLESHEETF/.csv/_bclconvert.csv}
+  SAMPLESHEETF="${SAMPLESHEETF/.csv/_bclconvert.csv}"
 fi
-sed -i \
-  -e "/\[Settings\]/ a CreateFastqForIndexReads,1" `#Generate FASTQ for Index sequences` \
-  -e "s/Adapter,/AdapterRead1,/"                   `#Adapter not an bclconvert field - AdapterRead1 is correct` \
-  -e "/^ReverseComplement,*/d"                     `#Not supported by bclconvert`\
-  "$BARCODESTR"                                    `#Allow 1 Mismatch for barcode - default value` \
-  ${SAMPLESHEETF/.csv/_bclconvert.csv}
+
+OUTPUTDIR=${4:-${RUNDIR}/Data/Intensities/BaseCalls/}
+echo "[$(date)] Output directory is set as: ${OUTPUTDIR}." >&2
+
+echo "[$(date)] Correcting SampleSheet for bclconvert usage." >&2
 
 
 echo -n "[$(date)] Current DRAGEN LICENSE usage:" >&2
@@ -80,7 +84,7 @@ echo "[$(date)] Sequencing is finished." >&2
 echo "[$(date)] Starting DRAGEN BCLCONVERT:" >&2
 dragen --force --bcl-conversion-only true \
   --bcl-input-directory ${RUNDIR} \
-  --sample-sheet ${SAMPLESHEETF/.csv/_bclconvert.csv} \
+  --sample-sheet ${SAMPLESHEETF} \
   --output-directory /staging/output/${RUNID}-fastq/ \
   --no-lane-splitting true \
   --bcl-num-parallel-tiles 1
